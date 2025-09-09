@@ -1,0 +1,12 @@
+# Build and VS
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.userprefs
+*.DS_Store
+*.vscode/
+# Docker
+**/Dockerfile.*
+docker-compose.override.yml

@@ -1,0 +1,45 @@
+{
+  "version": "3.9",
+  "services": {
+    "weatherservice": {
+      "build": {
+        "context": "./WeatherService"
+      },
+      "ports": [
+        "5001:5001"
+      ]
+    },
+    "countryservice": {
+      "build": {
+        "context": "./CountryService"
+      },
+      "ports": [
+        "5002:5002"
+      ]
+    },
+    "stateservice": {
+      "build": {
+        "context": "./StateService"
+      },
+      "ports": [
+        "5003:5003"
+      ]
+    },
+    "districtservice": {
+      "build": {
+        "context": "./DistrictService"
+      },
+      "ports": [
+        "5004:5004"
+      ]
+    },
+    "postalservice": {
+      "build": {
+        "context": "./PostalService"
+      },
+      "ports": [
+        "5005:5005"
+      ]
+    }
+  }
+}

@@ -1,0 +1,13 @@
+bin
+obj
+*.md
+*.sln
+*.user
+*.suo
+.vs
+.git
+.gitignore
+**/*.pdb
+**/*.mdb
+**/*.log
+node_modules
