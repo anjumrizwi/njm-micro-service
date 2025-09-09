@@ -1,24 +1,24 @@
+using PostalService.Models;
+using PostalService.Services;
+
 var builder = WebApplication.CreateBuilder(args);
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddSingleton<IPostalService, PostalService.Services.PostalService>();
 
 var app = builder.Build();
+
 app.UseSwagger();
 app.UseSwaggerUI();
 app.MapGet("/", () => Results.Redirect("/swagger"));
 
-// Fake lookup with a few examples
-var data = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase)
+app.MapGet("/postcode/{code}", (string code, IPostalService postalService) =>
 {
-    ["812006"] = new { country="IN", state="BR", district="Bhagalpur", area="Sajour", code="812006" },
-    ["560083"] = new { country="IN", state="KA", district="Bengaluru Urban", area="Bannerghatta Road", code="560083" },
-    ["94105"]  = new { country="US", state="CA", district="San Francisco", area="SOMA", code="94105" }
-};
-
-app.MapGet("/postcode/{code}", (string code) =>
-{
-    if (data.TryGetValue(code, out var item)) return Results.Ok(item);
-    return Results.NotFound(new { message = "Post code not found." });
+    var info = postalService.GetPostcodeInfo(code);
+    if (info is null)
+        return Results.NotFound(new { message = "Post code not found." });
+    return Results.Ok(info);
 });
 
 app.Run();

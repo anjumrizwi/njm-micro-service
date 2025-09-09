@@ -1,42 +1,36 @@
-using System.Collections.Concurrent;
+using StateService.Models;
+using StateService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddSingleton<IStateService, StateService.Services.StateService>();
 
 var app = builder.Build();
+
 app.UseSwagger();
 app.UseSwaggerUI();
 app.MapGet("/", () => Results.Redirect("/swagger"));
 
-// store: countryCode -> dictionary of states (stateCode -> stateName)
-var store = new ConcurrentDictionary<string, ConcurrentDictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
-
-// seed
-store.TryAdd("IN", new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase));
-store["IN"].TryAdd("KA", "Karnataka");
-store["IN"].TryAdd("BR", "Bihar");
-store.TryAdd("US", new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase));
-store["US"].TryAdd("CA", "California");
-store["US"].TryAdd("WA", "Washington");
-
-app.MapGet("/countries/{countryCode}/states", (string countryCode) =>
+app.MapGet("/countries/{countryCode}/states", (string countryCode, IStateService stateService) =>
 {
-    if (!store.TryGetValue(countryCode, out var states)) return Results.NotFound("Country not found.");
-    var list = states.Select(kv => new { code = kv.Key.ToUpperInvariant(), name = kv.Value }).OrderBy(x => x.name);
-    return Results.Ok(list);
+    var states = stateService.GetStates(countryCode);
+    if (!states.Any())
+        return Results.NotFound("Country not found.");
+    return Results.Ok(states);
 });
 
-app.MapPost("/countries/{countryCode}/states", (string countryCode, State state) =>
+app.MapPost("/countries/{countryCode}/states", (string countryCode, State state, IStateService stateService) =>
 {
-    if (string.IsNullOrWhiteSpace(state.Code) || string.IsNullOrWhiteSpace(state.Name))
-        return Results.BadRequest("Code and Name are required.");
-    var states = store.GetOrAdd(countryCode, _ => new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase));
-    if (!states.TryAdd(state.Code.Trim(), state.Name.Trim()))
-        return Results.Conflict("State code already exists for this country.");
-    return Results.Created($"/countries/{countryCode}/states/{state.Code}", state);
+    var result = stateService.AddState(countryCode, state);
+    return result switch
+    {
+        StateAddResult.Success => Results.Created($"/countries/{countryCode}/states/{state.Code}", state),
+        StateAddResult.Duplicate => Results.Conflict("State code already exists for this country."),
+        StateAddResult.Invalid => Results.BadRequest("Code and Name are required."),
+        _ => Results.StatusCode(500)
+    };
 });
 
 app.Run();
-
-record State(string Code, string Name);

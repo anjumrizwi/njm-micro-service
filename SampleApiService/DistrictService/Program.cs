@@ -1,42 +1,36 @@
-using System.Collections.Concurrent;
+using DistrictService.Models;
+using DistrictService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddSingleton<IDistrictService, DistrictService.Services.DistrictService>();
 
 var app = builder.Build();
+
 app.UseSwagger();
 app.UseSwaggerUI();
 app.MapGet("/", () => Results.Redirect("/swagger"));
 
-// store: country -> state -> district list
-var store = new ConcurrentDictionary<string, ConcurrentDictionary<string, ConcurrentDictionary<string, string>>>(StringComparer.OrdinalIgnoreCase);
-
-// seed
-store.TryAdd("IN", new(StringComparer.OrdinalIgnoreCase));
-store["IN"].TryAdd("BR", new(StringComparer.OrdinalIgnoreCase));
-store["IN"]["BR"].TryAdd("BH", "Bhagalpur");
-store["IN"]["BR"].TryAdd("PT", "Patna");
-
-app.MapGet("/countries/{countryCode}/states/{stateCode}/districts", (string countryCode, string stateCode) =>
+app.MapGet("/countries/{countryCode}/states/{stateCode}/districts", (string countryCode, string stateCode, IDistrictService districtService) =>
 {
-    if (!store.TryGetValue(countryCode, out var states)) return Results.NotFound("Country not found.");
-    if (!states.TryGetValue(stateCode, out var districts)) return Results.NotFound("State not found.");
-    var list = districts.Select(kv => new { code = kv.Key.ToUpperInvariant(), name = kv.Value }).OrderBy(x => x.name);
-    return Results.Ok(list);
+    var districts = districtService.GetDistricts(countryCode, stateCode);
+    if (!districts.Any())
+        return Results.NotFound("Country or State not found.");
+    return Results.Ok(districts);
 });
 
-app.MapPost("/countries/{countryCode}/states/{stateCode}/districts", (string countryCode, string stateCode, District district) =>
+app.MapPost("/countries/{countryCode}/states/{stateCode}/districts", (string countryCode, string stateCode, District district, IDistrictService districtService) =>
 {
-    if (string.IsNullOrWhiteSpace(district.Code) || string.IsNullOrWhiteSpace(district.Name))
-        return Results.BadRequest("Code and Name are required.");
-    var states = store.GetOrAdd(countryCode, _ => new(StringComparer.OrdinalIgnoreCase));
-    var districts = states.GetOrAdd(stateCode, _ => new(StringComparer.OrdinalIgnoreCase));
-    if (!districts.TryAdd(district.Code.Trim(), district.Name.Trim()))
-        return Results.Conflict("District code already exists for this state.");
-    return Results.Created($"/countries/{countryCode}/states/{stateCode}/districts/{district.Code}", district);
+    var result = districtService.AddDistrict(countryCode, stateCode, district);
+    return result switch
+    {
+        DistrictAddResult.Success => Results.Created($"/countries/{countryCode}/states/{stateCode}/districts/{district.Code}", district),
+        DistrictAddResult.Duplicate => Results.Conflict("District code already exists for this state."),
+        DistrictAddResult.Invalid => Results.BadRequest("Code and Name are required."),
+        _ => Results.StatusCode(500)
+    };
 });
 
 app.Run();
-
-record District(string Code, string Name);
