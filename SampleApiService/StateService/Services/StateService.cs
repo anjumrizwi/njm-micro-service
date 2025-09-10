@@ -10,14 +10,7 @@ public class StateService : IStateService
 
     public StateService()
     {
-        _store = new(StringComparer.OrdinalIgnoreCase);
-        // Seed
-        _store.TryAdd("IN", new(StringComparer.OrdinalIgnoreCase));
-        _store["IN"].TryAdd("KA", "Karnataka");
-        _store["IN"].TryAdd("BR", "Bihar");
-        _store.TryAdd("US", new(StringComparer.OrdinalIgnoreCase));
-        _store["US"].TryAdd("CA", "California");
-        _store["US"].TryAdd("WA", "Washington");
+        _store = StateList.GetCountriesWithState();
     }
 
     public IEnumerable<State> GetStates(string countryCode)
