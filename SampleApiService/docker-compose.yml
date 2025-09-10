@@ -1,45 +1,45 @@
-{
-  "version": "3.9",
-  "services": {
-    "weatherservice": {
-      "build": {
-        "context": "./WeatherService"
-      },
-      "ports": [
-        "5001:5001"
-      ]
-    },
-    "countryservice": {
-      "build": {
-        "context": "./CountryService"
-      },
-      "ports": [
-        "5002:5002"
-      ]
-    },
-    "stateservice": {
-      "build": {
-        "context": "./StateService"
-      },
-      "ports": [
-        "5003:5003"
-      ]
-    },
-    "districtservice": {
-      "build": {
-        "context": "./DistrictService"
-      },
-      "ports": [
-        "5004:5004"
-      ]
-    },
-    "postalservice": {
-      "build": {
-        "context": "./PostalService"
-      },
-      "ports": [
-        "5005:5005"
-      ]
-    }
-  }
-}
+services:
+  weatherservice:
+    build: ./WeatherService
+    image: anjumrizwi/weatherservice:latest
+    container_name: weatherservice
+    ports:
+      - "5001:8080"
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+
+  countryservice:
+    build: ./CountryService
+    image: anjumrizwi/countryservice:latest
+    container_name: countryservice
+    ports:
+      - "5002:8080"
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+
+  stateservice:
+    build: ./StateService
+    image: anjumrizwi/stateservice:latest
+    container_name: stateservice
+    ports:
+      - "5003:8080"
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+
+  districtservice:
+    build: ./DistrictService
+    image: anjumrizwi/districtservice:latest
+    container_name: districtservice
+    ports:
+      - "5004:8080"
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+
+  postalservice:
+    build: ./PostalService
+    image: anjumrizwi/postalservice:latest
+    container_name: postalservice
+    ports:
+      - "5005:8080"
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
